@@ -1,8 +1,9 @@
-import pygame
-import sys
 import math
 import random
+import sys
 from enum import IntEnum
+
+import pygame
 
 
 class MAZE(IntEnum):
@@ -107,6 +108,7 @@ imgPlayer = {
     PLAYER_IMAGE.RIGHT_FACING2: pygame.image.load("image/mychr7.png"),
 }
 
+
 # メイン処理
 def main():
     # 変数の初期化
@@ -152,7 +154,7 @@ def get_screen_size():
     return width, height
 
 
-# 迷路サイズを取得
+# ダンジョンサイズを取得
 def get_dungen_size():
     maze_size = get_maze_size()
     maze_width, maze_height = maze_size

@@ -1,0 +1,25 @@
+{
+    // Python
+    "python.defaultInterpreterPath": "/Users/petori/miniforge3/envs/pygame_envs/bin", // 実行パス
+    "python.linting.enabled": true, // リンターを有効
+    "python.linting.pylintEnabled": false, // pylintの設定を解除
+    "python.linting.flake8Enabled": true, // flake8を有効
+    // flake8の1行文字数を79文字から88文字に変更 (blackに合わせるため)
+    "python.linting.flake8Args": [
+        "--max-line-length","88","--ignore=E203,W503,W504"
+    ],
+    "python.linting.lintOnSave": true, // ファイル保存時のリンタ実行
+    "python.linting.mypyEnabled": true, // mypyの設定
+    "python.formatting.provider": "black", // 実行するフォーマッタの設定 (blackを有効)
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "python.formatting.blackPath": "/Users/petori/miniforge3/envs/pygame_envs/bin/black", // blackのパス
+    "python.formatting.yapfPath": "", // yapf(フォーマッタ)を無効
+    "python.formatting.autopep8Path": "", // autopep8(フォーマッタ)を無効
+    "python.globalModuleInstallation": true,
+
+}
