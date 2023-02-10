@@ -111,14 +111,16 @@ imgPlayer = {
 
 # メイン処理
 def main():
-    # 変数の初期化
+    # pygameの初期化
+    pygame.init()
+    # 画面サイズの設定
     size = get_screen_size()
     width, height = size
-    player = [0, 0, PLAYER_IMAGE.FRONT1]
-    # pygameの設定
-    pygame.init()
     screen = pygame.display.set_mode((width, height))
+    # 時間クラスの取得
     clock = pygame.time.Clock()
+    # プレイヤーの設定
+    player = [0, 0, PLAYER_IMAGE.FRONT1]
     # 迷路の作成
     maze = make_maze()
     # ダンジョンの作成
@@ -166,8 +168,8 @@ def get_dungen_size():
 
 # 迷路サイズを取得
 def get_maze_size():
-    width = SCREEN_WIDTH
-    height = SCREEN_HEIGHT
+    width = MAZE_WIDTH
+    height = MAZE_HEIGHT
     return width, height
 
 
@@ -328,7 +330,7 @@ def make_maze():
         for x in range(2, width - 2, 2):
             # １マス置きに柱を立てる
             maze[y][x] = MAZE.PILLAR
-            if x < 2:
+            if x < 2:  # 2列目からは左に壁を作らない
                 pole_coor = random.randint(0, 3)
             else:
                 pole_coor = random.randint(0, 2)
