@@ -6,6 +6,50 @@ from enum import IntEnum
 import pygame
 
 
+class SCENE(IntEnum):
+    # オープニング
+    OPENING = 0
+    # ゲームオーバー
+    GAVE_OVER = 1
+    # ダンジョン生成
+    CREATE_DUNGEN = 2
+    # 移動中
+    MOVING_PLAYER = 3
+    # レベルアップ
+    LEVEL_UP = 4
+    # 戦闘開始
+    START_OF_BATTLE = 5
+    # 戦闘終了
+    END_OF_BATTLE = 6
+    # 戦闘勝利
+    WIN_BATTLE = 7
+    # 戦闘敗北
+    LOSE_BATTLE = 8
+    # 戦闘から逃げる
+    ESCAPE_BATTLE = 9
+    # プレイヤーのターン
+    PLAYER_TURN = 10
+    # プレイヤーの攻撃
+    ATTACKING_PLAYER = 11
+    # プレイヤー体力回復
+    PHYSICAL_RECOVERY_OF_PLAYER = 12
+    # 火炎石
+    BLAZE_GEM = 13
+    # 敵のターン
+    ENEMY_TURN = 14
+    # 敵の攻撃
+    ATTACKING_ENEMY = 15
+    # 敵の体力回復
+    PHYSICAL_RECOVERY_OF_ENEMY = 16
+
+
+class BACKGROUNDS(IntEnum):
+    # オープニング
+    OPENING = 1
+    # 戦闘
+    BATTLE = 2
+
+
 class MAZE(IntEnum):
     # 床
     FLOOR = 0
@@ -18,16 +62,46 @@ class MAZE(IntEnum):
 class DUNGEN(IntEnum):
     # 床
     FLOOR = 0
-    # 宝箱
-    TREASURE = 1
-    # 繭
-    COCOON = 2
+    # 壁
+    WALL = 1
+    # 壁と壁が繋がっている場合
+    WALL2 = 2
     # 階段
     STAIRS = 3
-    # 壁
-    WALL = 9
-    # 壁と壁が繋がっている場合
-    WALL2 = 10
+    # 宝箱
+    TREASURE = 4
+    # 繭
+    COCOON = 5
+
+
+class ITEMS(IntEnum):
+    # 回復
+    POTION = 1
+    # ドクロ
+    SPOILED = 2
+    # りんご
+    APPLE = 3
+    # 肉
+    MEAT = 4
+    # 火炎石
+    BLAZE_GEM = 5
+
+
+class ENEMIES(IntEnum):
+    # 敵
+    ENEMY1 = 1
+    ENEMY2 = 2
+    ENEMY3 = 3
+    ENEMY4 = 4
+    ENEMY5 = 5
+    ENEMY6 = 6
+
+
+class EFFECTS(IntEnum):
+    # 攻撃
+    ATTACK = 1
+    # 消滅
+    DEATH = 2
 
 
 class PLAYER_INFO(IntEnum):
@@ -66,12 +140,20 @@ FILED_CELL_WIDTH = 80
 FILED_CELL_HEIGHT = 80
 SCREEN_WIDTH = 880
 SCREEN_HEIGHT = 720
+ITEMS_NUM = 60
 # 色の設定
 Color = {
     # 背景 (黒)
     "BACK_GROUND": (0, 0, 0),
     "CYAN": (0, 255, 255),
     "GRAY": (96, 96, 96),
+}
+# シーン画像
+imgBackGrounds = {
+    # オープニング
+    BACKGROUNDS.OPENING: pygame.image.load("image/title.png"),
+    # 戦闘
+    BACKGROUNDS.BATTLE: pygame.image.load("image/btlbg.png"),
 }
 # ダンジョン画像
 imgDungen = {
@@ -81,12 +163,25 @@ imgDungen = {
     DUNGEN.WALL: pygame.image.load("image/wall.png"),
     # 壁と壁が繋がっている場合
     DUNGEN.WALL2: pygame.image.load("image/wall2.png"),
+    # 階段
+    DUNGEN.STAIRS: pygame.image.load("image/stairs.png"),
     # 宝箱
     DUNGEN.TREASURE: pygame.image.load("image/tbox.png"),
     # 繭
-    DUNGEN.STAIRS: pygame.image.load("image/cocoon.png"),
-    # 階段
-    DUNGEN.STAIRS: pygame.image.load("image/stairs.png"),
+    DUNGEN.COCOON: pygame.image.load("image/cocoon.png"),
+}
+# アイテム画像
+imgItems = {
+    # 回復
+    ITEMS.POTION: pygame.image.load("image/potion.png"),
+    # ドクロ
+    ITEMS.SPOILED: pygame.image.load("image/spoiled.png"),
+    # りんご
+    ITEMS.APPLE: pygame.image.load("image/apple.png"),
+    # 肉
+    ITEMS.MEAT: pygame.image.load("image/meat.png"),
+    # 宝石
+    ITEMS.BLAZE_GEM: pygame.image.load("image/blaze_gem.png"),
 }
 # プレイヤー画像
 imgPlayer = {
@@ -108,7 +203,6 @@ imgPlayer = {
     PLAYER_IMAGE.RIGHT_FACING2: pygame.image.load("image/mychr7.png"),
 }
 
-
 # メイン処理
 def main():
     # pygameの初期化
@@ -125,6 +219,10 @@ def main():
     maze = make_maze()
     # ダンジョンの作成
     dungen = make_dungen(maze)
+    # 階段の作成
+    make_stairs(dungen)
+    # アイテムを設定
+    set_items(dungen)
     # プレイヤーの初期化処理
     init_player(dungen, player)
     # ゲームループ処理
@@ -388,6 +486,49 @@ def make_dungen(maze):
     return dungen
 
 
+# 階段を作成
+def make_stairs(dungen):
+    # ダンジョンのサイズを取得
+    dungen_size = get_dungen_size()
+    dungen_width, dungen_height = dungen_size
+    while True:
+        # ダンジョンの位置をランダムで取得 (囲いの壁を除く)
+        x = random.randint(3, dungen_width - 4)
+        y = random.randint(3, dungen_height - 4)
+        # 床の場合
+        if dungen[y][x] == DUNGEN.FLOOR:
+            # 階段の周囲が壁になった場合、通れなくなるため、床にしておく
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    dungen[y + j][x + i] = DUNGEN.FLOOR
+            # 階段に設定
+            dungen[y][x] = DUNGEN.STAIRS
+            break
+
+
+# アイテムを設定
+def set_items(dungen):
+    # ダンジョンのサイズを取得
+    dungen_size = get_dungen_size()
+    dungen_width, dungen_height = dungen_size
+    for i in range(ITEMS_NUM):
+        # ダンジョンの位置をランダムで取得 (囲いの壁を除く)
+        x = random.randint(3, dungen_width - 4)
+        y = random.randint(3, dungen_height - 4)
+        # 床の場合
+        if dungen[y][x] == DUNGEN.FLOOR:
+            # 宝もしくは繭を設定
+            dungen[y][x] = random.choice(
+                [
+                    DUNGEN.TREASURE,
+                    DUNGEN.COCOON,
+                    DUNGEN.COCOON,
+                    DUNGEN.COCOON,
+                    DUNGEN.COCOON,
+                ]
+            )
+
+
 # プレイヤーの初期化処理
 def init_player(dungen, player):
     # ダンジョンのサイズを取得
@@ -402,6 +543,146 @@ def init_player(dungen, player):
             player[PLAYER_INFO.X] = x
             player[PLAYER_INFO.Y] = y
             break
+
+
+# ゲームシーン処理
+def game_scene(current_scene):
+
+    # オープニング
+    if current_scene == SCENE.OPENING:
+        opening()
+    # ゲームオーバー
+    elif current_scene == SCENE.GAVE_OVER:
+        game_over()
+    # ダンジョン作成
+    elif current_scene == SCENE.CREATE_DUNGEN:
+        create_dungen()
+    # 移動中
+    elif current_scene == SCENE.MOVING_PLAYER:
+        moving_player()
+    # レベルアップ
+    elif current_scene == SCENE.LEVEL_UP:
+        level_up()
+    # 戦闘開始
+    elif current_scene == SCENE.START_OF_BATTLE:
+        start_of_battle()
+    # 戦闘終了
+    elif current_scene == SCENE.END_OF_BATTLE:
+        end_of_battle()
+    # 戦闘勝利
+    elif current_scene == SCENE.WIN_BATTLE:
+        win_battle()
+    # 戦闘敗北
+    elif current_scene == SCENE.LOSE_BATTLE:
+        lose_battle()
+    # 戦闘逃走
+    elif current_scene == SCENE.ESCAPE_BATTLE:
+        escape_battle()
+    # プレイヤーのターン
+    elif current_scene == SCENE.PLAYER_TURN:
+        player_trun()
+    # プレイヤーの攻撃
+    elif current_scene == SCENE.ATTACKING_PALYER:
+        attacking_player()
+    # プレイヤーの体力回復
+    elif current_scene == SCENE.PHYSICAL_RECOVERY_OF_PLAYER:
+        physical_recovery_of_player()
+    # 火炎石
+    elif current_scene == SCENE.BLAZE_GEM:
+        blaze_gem()
+    # 敵のターン
+    elif current_scene == SCENE.ENEMY_TURN:
+        enemy_trun()
+    # 敵の攻撃
+    elif current_scene == SCENE.ATTACKING_ENEMY:
+        attacking_enemy()
+    # 敵の体力回復
+    elif current_scene == SCENE.PHYSICAL_RECOVERY_OF_ENEMY:
+        physical_recovery_of_enemy()
+
+
+# オープニング処理
+def opening():
+    return
+
+
+# ゲームオーバー処理
+def game_over():
+    return
+
+
+# ダンジョン生成処理
+def create_dungen():
+    return
+
+
+# 移動処理
+def moving_player():
+    return
+
+
+# レベルアップ処理
+def level_up():
+    return
+
+
+# 戦闘開始処理
+def start_of_battle():
+    return
+
+
+# 戦闘終了処理
+def end_of_battle():
+    return
+
+
+# 戦闘勝利処理
+def win_battle():
+    return
+
+
+# 戦闘敗北処理
+def lose_battle():
+    return
+
+
+# 戦闘逃走処理
+def escape_battle():
+    return
+
+
+# プレイヤーのターン処理
+def player_trun():
+    return
+
+
+# 攻撃処理
+def attacking_player():
+    return
+
+
+# プレイヤーの体力回復処理
+def physical_recovery_of_player():
+    return
+
+
+def blaze_gem():
+    return
+
+
+# 敵のターン処理
+def enemy_trun():
+    return
+
+
+# 敵の攻撃処理
+def attacking_enemy():
+    return
+
+
+# 敵の体力回復処理
+def physical_recovery_of_enemy():
+    return
 
 
 # 実行
